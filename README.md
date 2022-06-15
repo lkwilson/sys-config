@@ -180,6 +180,17 @@ internal interfaces, but Routing obviously involves both.
 
 # Bridging
 
+***Note! [Never Mind](https://serverfault.com/questions/152363/bridging-wlan0-to-eth0)***
+
+***This doesn't actually work because WIFI isn't good at bridging with ethernet***
+
+This is however useful for creating a bridge. The bridge can be what you run
+dhcp, etc on, and then you have a router with many ethernet ports. You just add
+them. Then you can probably do VLAN stuff, but I highly recommend somewhere else
+for learning how to do that.
+
+## Deprecated:
+
 Suppose you have a wifi signal, a standard linux box, and a router. You could
 turn the linux box into a router, or you could even install OpenWRT, and then
 make the router a bridge network for WIFI. Or you could just bridge the linux
