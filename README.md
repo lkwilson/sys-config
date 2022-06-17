@@ -167,17 +167,6 @@ If you want, it can be a pxe boot server as well.
 
 https://wiki.archlinux.org/title/dnsmasq
 
-# Routing
-
-This is the complicated part because of security. DHCP and DNS only listen on
-internal interfaces, but Routing obviously involves both.
-
-## Tooling
-
-`firewalld` and `iptables` seem to be the routing programs of choice.
-`firewalld` is a wrapper around `iptables`, apparently.
-
-
 # Bridging
 
 ***Note! [Never Mind](https://serverfault.com/questions/152363/bridging-wlan0-to-eth0)***
@@ -208,4 +197,84 @@ ip link set dev wlan0 master br0
 ip link set dev wlan0 nomaster
 ip link set dev eth0 nomaster
 ip link del br0
+```
+
+# Routing
+
+This is the complicated part because of security. DHCP and DNS only listen on
+internal interfaces, but Routing obviously involves both.
+
+## Tooling
+
+`firewalld` and `iptables` seem to be the routing programs of choice.
+`firewalld` is a wrapper around `iptables`, and has nice zone based firewall abstractions
+
+## zones
+
+
+### Create wan zone
+
+```
+firewall-cmd --permanent --new-zone=wan
+```
+
+Allow ssh (usually only for setup). Once you have a router, you can connect from
+the lan.
+
+```
+firewall-cmd --permanent --zone=wan --add-service=ssh
+```
+
+Set the target to DROP
+
+```
+firewall-cmd --permanent --zone=wan --set-target=DROP
+```
+
+Add masquerading (the nat)
+
+```
+firewall-cmd --permanent --zone=wan --add-masquerade 
+```
+
+Add the wan interface to the zone:
+```
+firewall-cmd --permanent --zone=wan --change-interface=wlan0
+```
+
+### Create lan zone
+
+You can create a custom lan, or you can just use the default. The percs of the
+default are that new interfaces are automatically added. You should configure
+that one anyways to lock it up or relax the security, so you might as well just
+use that for the lan.
+
+```
+firewall-cmd --permanent --new-zone=lan
+```
+
+You can make it very open or very closed.
+```
+firewall-cmd --permanent --zone=lan --set-target=DROP
+firewall-cmd --permanent --zone=lan --add-service={ssh,dns,dhcp}
+```
+or
+```
+firewall-cmd --permanent --zone=lan --set-target=ACCEPT
+```
+
+### Other settings
+
+You can add a source to whitelist a zone:
+```
+firewall-cmd --permanent --zone=secure_lan --add-source=1.1.1.1
+```
+
+You could add port forwarding if needed
+
+## Potential requirements
+
+Create a new file /etc/sysctl.d/ip_forward.conf and add the following:
+```
+net.ipv4.ip_forward=1
 ```
