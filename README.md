@@ -5,6 +5,40 @@ Notes on how to turn a linux server into a common router.
 OpenWRT is the best thing to use, but if you don't feel like installing that for
 a playground, this is for you.
 
+# Configure interfaces
+
+This may not be totally correct but worked for me:
+
+In `/etc/network/interfaces.d/`, add two files: wlan0 and eth0.
+
+## `/etc/network/interfaces.d/eth0`
+
+```
+auto eth0
+iface eth0 inet static
+  address 192.168.0.1
+  netmask 255.255.255.0
+```
+
+Once, I had an IP address that kept hanging around past reboots. The following
+might be a better way to configut it?
+
+```
+ip addr add 192.168.0.1/24 dev eth0
+ip addr del 169.254.61.47/16 dev eth0
+```
+
+But then it came back after the reboot, so..
+
+## `/etc/network/interfaces.d/wlan0`
+
+```
+allow-hotplug wlan0
+iface wlan0 inet dhcp
+  wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+```
+
+
 # DHCP + DNS
 
 `dnsmasq` seems to be the defacto. It will provide a dhcp and dns server.
