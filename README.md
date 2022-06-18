@@ -5,39 +5,95 @@ Notes on how to turn a linux server into a common router.
 OpenWRT is the best thing to use, but if you don't feel like installing that for
 a playground, this is for you.
 
+## Use Case
+
+You have a computer with two network interfaces. One connected to a wan, the
+other you would like a personal lan. As far as this page is concerned, it
+doesn't matter whether the network interfaces are wifi or ethernet.
+
+It only makes a difference in that, if one of them is a wifi interface, it
+cannot be bridged. This doesn't consider the bridge case, so it doesn't affect
+us here.
+
+There's two types of wan. The internet and another router's lan. If your router
+is directly hooked to the internet, then you'll want to make your router as
+secure as possible. If your router is hooked to another router's lan, then you
+don't have to be as careful.
+
+My specific use case is that my wan interface is wifi, so wlan0. My lan
+interface is ethernet, so eth0. My wan is connected to another router (my own),
+so I favor being less secure.
+
 # Configure interfaces
 
-This may not be totally correct but worked for me:
+## A note on ifconfig/ifup/ifdown
 
-In `/etc/network/interfaces.d/`, add two files: wlan0 and eth0.
+Commands like ifconfig, ifup, ifdown, etc, are deprecated.
 
-## `/etc/network/interfaces.d/eth0`
+A lot of guides will have you edit `/etc/network/interfaces`, but it is an
+ifconfig/ifup/ifdown thing, so it is deprecated.
 
+Others will tell you iproute2 is the replacement, but it's not a network
+manager.
+
+Network managers seem to be `NetworkManager` or `systemd-networkd`.
+
+If you want to use `/etc/network/interfaces`, you're more than welcome to. I ran
+into an issue where, my eth0 got a static IP for ifup, and then dhcpd gave it a
+169.254.x.x/16 address as well. I switched to `systemd-networkd`, and all was
+well.
+
+## I use `systemd-networkd`
+
+For this, create two config files:
 ```
-auto eth0
-iface eth0 inet static
-  address 192.168.0.1
-  netmask 255.255.255.0
-```
-
-Once, I had an IP address that kept hanging around past reboots. The following
-might be a better way to configut it?
-
-```
-ip addr add 192.168.0.1/24 dev eth0
-ip addr del 169.254.61.47/16 dev eth0
-```
-
-But then it came back after the reboot, so..
-
-## `/etc/network/interfaces.d/wlan0`
-
-```
-allow-hotplug wlan0
-iface wlan0 inet dhcp
-  wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+/etc/systemd/network/10-eth0.network
+/etc/systemd/network/11-wlan0.network
 ```
 
+I want my static lan, with dns, to be available and setup before my wan is setup
+because I point my wan at my lan's dns.
+
+## Lan Interface `/etc/systemd/network/10-eth0.network`
+```
+[Match]
+Name=eth0
+
+[Network]
+Address=192.168.0.1/24
+```
+
+- `192.168.0.1` is the subnet I chose for my router
+
+Do I need the following? Not sure yet.
+```
+DNS=192.168.0.1
+```
+
+## Wan Interface: `/etc/systemd/network/11-wlan0.network`
+```
+[Match]
+Name=wlan0
+
+[Network]
+DHCP=yes
+DNS=192.168.0.1
+IgnoreCarrierLoss=3s
+```
+
+- `IgnoreCarrierLoss=3s` is a wifi thing. Move it to any interface files with wifi.
+
+## dhcpcd service
+
+This service will actually do the dhcp registration, so don't disable it. If we
+were missing the config for the lan, then it would assign a 169.254.x.x/16
+address for recovery.
+
+## Sources:
+
+- https://wiki.archlinux.org/title/systemd-networkd
+- https://www.debian.org/doc/manuals/debian-reference/ch05.en.html
+- https://eldon.me/arch-linux-home-router-systemd-configuration/
 
 # DHCP + DNS
 
@@ -116,6 +172,9 @@ The problem with non standard is that a router could forward it to main servers
 and leak network information, but the `local=` setting might fix that, so you
 can then safely use the convenient .lan network.
 
+However, I have noticed that phones don't love the .lan suffix, so maybe stick
+with the standard ones.
+
 ### Override
 
 Block a lookup
@@ -185,6 +244,12 @@ This makes it run on all but respond on these lans.
 listen-address=::1,127.0.0.1,192.168.1.1
 ```
 
+### Prevent adding /etc/hosts to dns
+
+```
+no-hosts
+```
+
 ### Ignore system settings
 
 Make the config file the only one
@@ -199,7 +264,7 @@ If you want, it can be a pxe boot server as well.
 
 ## Sources
 
-https://wiki.archlinux.org/title/dnsmasq
+- https://wiki.archlinux.org/title/dnsmasq
 
 # Bridging
 
@@ -252,29 +317,66 @@ internal interfaces, but Routing obviously involves both.
 firewall-cmd --permanent --new-zone=wan
 ```
 
-Allow ssh (usually only for setup). Once you have a router, you can connect from
-the lan.
+### Add services if you want
+
+You can probably live with only having access to the router from the lan, so
+this isn't necessary.
 
 ```
 firewall-cmd --permanent --zone=wan --add-service=ssh
 ```
 
-Set the target to DROP
+### Set the target to DROP
+The default response to connection attempts is to drop them and not respond.
+Good for undesired connections, bad for icmp (see Unblocking ICMP types)
 
 ```
 firewall-cmd --permanent --zone=wan --set-target=DROP
 ```
 
-Add masquerading (the nat)
-
+### Add masquerading (the nat)
 ```
 firewall-cmd --permanent --zone=wan --add-masquerade 
 ```
 
-Add the wan interface to the zone:
+### Add the wan interface to the zone:
 ```
 firewall-cmd --permanent --zone=wan --change-interface=wlan0
 ```
+
+### Unblocking ICMP types
+target=DROP causes ICMP packets to also drop. This is bad because ICMP does
+useful things that helps the router do better. For this reason, I unblock all of
+them, but you can google the important ones and just enable those if you like.
+
+ICMP types are a little wierd on firewalld. You have to block the ones you want,
+and then invert the icmp block rules.
+
+If we do nothing, by default, the ICMP type is blocked because of target, so we
+have to do it this way:
+
+```
+firewall-cmd --permanent --zone=wan --add-icmp-block-inversion 
+```
+
+Now when we block an icmptype, it'll actually be unblocking.
+
+```
+firewall-cmd --get-icmptypes
+```
+
+This outputs all the icmp types available. Iterate over these and unblock them.
+Here's some bash magic:
+
+```
+# store in bash array
+icmptypes=($(firewall-cmd --get-icmptypes))
+# expand array with prefix
+firewall-cmd --permanent --zone=wan ${icmptypes[@]/#/--add-icmp-block=}
+```
+
+At this point, you can unblock things like ping, but some argue it's unecessary.
+It's an interesting rabbit hole if you're curious.
 
 ### Create lan zone
 
@@ -287,12 +389,16 @@ use that for the lan.
 firewall-cmd --permanent --new-zone=lan
 ```
 
+### A secure lan
+
 You can make it very open or very closed.
 ```
 firewall-cmd --permanent --zone=lan --set-target=DROP
 firewall-cmd --permanent --zone=lan --add-service={ssh,dns,dhcp}
 ```
-or
+
+### An unsecured one
+
 ```
 firewall-cmd --permanent --zone=lan --set-target=ACCEPT
 ```
@@ -308,7 +414,19 @@ You could add port forwarding if needed
 
 ## Potential requirements
 
+I guess some machines may disable routing by default. I think the above
+configurations will enable it (either dnsmasq or firewalld's masquerading).
+
 Create a new file /etc/sysctl.d/ip_forward.conf and add the following:
 ```
 net.ipv4.ip_forward=1
 ```
+
+## Sources
+
+- https://eldon.me/arch-linux-based-home-router-part-iii-firewalld-configuration/
+
+
+# Resources
+
+- http://intronetworks.cs.luc.edu
