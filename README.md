@@ -569,12 +569,27 @@ lsusb
 Google the name from lsusb or lspci followed by linux driver. Hopefully, someone
 has something helpful to you.
 
+## `ip` cheat sheet
 
-A great resource on firewalld
-- https://wiki.archlinux.org/title/Firewalld
+```
+ip addr show [ dev STRING ]
+ip addr { add | del } PREFIX dev STRING
 
-This blog does fancy things with vlans and DMZ zones
-- https://eldon.me/arch-linux-based-home-router-part-iii-firewalld-configuration/
+ip link set DEVICE { up | down }
+ip link show [ DEVICE ]
+ip link set [ dev ] DEVICE { up | down }
+
+ip neighbour
+
+ip route
+ip route { add | del } { default | PREFIX } { via ADDRESS | dev STRING }
+```
+
+- you don't have to type the whole name
+- deletes work on the first, longest match
+- `PREFIX`: `192.168.1.1/24`
+- `STRING|DEVICE`: `eth0`
+- `ADDRESS`: `192.168.1.1`
 
 # General Resources
 
