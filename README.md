@@ -88,7 +88,8 @@ easily be messed up.
 
 Instead, we should use a network manager such as `NetworkManager` or `systemd-networkd`.
 
-`systemd-networkd` is the one I picked for this guide.
+`systemd-networkd` is the one I picked for this guide, and to configure it, I
+used `netplan`.
 
 ### Notes
 If you want to use `/etc/network/interfaces`, you're more than welcome to, but
@@ -103,7 +104,44 @@ I removed the `/etc/network/interfaces` config, and I switched to
 as well. However, eth0 didn't get any IP address at all at that point. I re
 enabled `dhcpcd`, and it worked just as expected: one single static IP.
 
-## Setup `systemd-networkd`
+## Setup `netplan`
+
+We configure the `eno1` interface with a static IP. It doesn't need anything
+else like DNS since it gets those from wifi. We configure `wlo1' to connect to
+an access point and use dhcp. You could override DNS nameservers too if you'd
+like.
+```
+# This is the network config written by 'subiquity'
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eno1:
+      addresses:
+        - 192.168.0.1/24
+  wifis:
+    wlo1:
+      access-points:
+        MyWIFI:
+          password: "MyPassword"
+      dhcp4: true
+```
+
+It's also easy to just copy examples for your specific use case.
+```
+https://netplan.io/examples
+```
+
+Finally, run the follwing.
+```
+netplan generate
+netplan apply
+```
+
+The docs suggest that the generate step isn't necessary, but it's warned me
+about configuration issues before, so it seems useful to me.
+
+## Setup `systemd-networkd` (deprecated)
 We use `systemd-networkd` as our network manager
 
 Enable it:
@@ -124,7 +162,7 @@ dns.
 
 I don't know if it actually matters, but it seems to work just fine this way.
 
-## Lan Interface `/etc/systemd/network/10-eth0.network`
+## Lan Interface `/etc/systemd/network/10-eth0.network` (deprecated)
 We configure the internal interface with a static IP and a subnet mask defining
 its subnet
 
@@ -154,7 +192,7 @@ route, which is likely the external interface, since it's DHCP server will tell
 it a gateway, which you'll notice we don't configure here. If we did, it would
 likely break some things.
 
-## Wan Interface: `/etc/systemd/network/11-wlan0.network`
+## Wan Interface: `/etc/systemd/network/11-wlan0.network` (deprecated)
 ```
 [Match]
 Name=wlan0
@@ -180,6 +218,9 @@ necessary, but it's probably better.
 the dhcp client work. For that reason, don't disable this service.
 
 ## Sources:
+
+A great reference for netplan:
+- https://netplan.io/examples
 
 Great resources on systemd-networkd
 - https://wiki.archlinux.org/title/systemd-networkd
