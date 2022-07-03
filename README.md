@@ -475,7 +475,17 @@ firewall-cmd --permanent --zone=secure_lan --add-source=1.1.1.1
 
 You could add port forwarding if needed
 
-## Other things
+## Sources
+
+A great resource on firewalld
+- https://wiki.archlinux.org/title/Firewalld
+
+This blog does fancy things with vlans and DMZ zones
+- https://eldon.me/arch-linux-based-home-router-part-iii-firewalld-configuration/
+
+# Other things
+
+## Manually enable routing packets
 
 I guess some machines may disable routing by default. I think the above
 configurations will enable it (either dnsmasq or firewalld's masquerading).
