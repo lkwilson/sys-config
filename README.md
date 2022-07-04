@@ -116,15 +116,32 @@ network:
   version: 2
   renderer: networkd
   ethernets:
-    eno1:
+    eth0:
       addresses:
         - 192.168.0.1/24
+      nameservers:
+        search: [lan]
+        addresses: [192.168.0.1, 8.8.8.8, 8.8.4.4]
+# if the server is not the router, you have to configure the route to the real
+# router with this:
+#    routes:
+# this didn't work
+#      - to: default
+#      - to: 0.0.0.0/0
+#        via: 192.168.0.2
+# This one didn't work for some reason?
+#     routes:
+#       - to: default
+#         via: 192.168.0.2
   wifis:
     wlo1:
       access-points:
         MyWIFI:
           password: "MyPassword"
       dhcp4: true
+#     nameservers:
+#       search: [lan]
+#       addresses: [192.168.0.1, 8.8.8.8, 8.8.4.4]
 ```
 
 It's also easy to just copy examples for your specific use case.
