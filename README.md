@@ -122,7 +122,8 @@ enabled `dhcpcd`, and it worked just as expected: one single static IP.
 We configure the `eno1` interface with a static IP. It doesn't need anything
 else like DNS since it gets those from wifi. We configure `wlo1' to connect to
 an access point and use dhcp. You could override DNS nameservers too if you'd
-like.
+like. Set `optional: yes` to prevent it blocking on boot up when it can't find
+your wifi network.
 ```
 # This is the network config written by 'subiquity'
 network:
@@ -135,6 +136,7 @@ network:
       nameservers:
         search: [lan]
         addresses: [192.168.0.1, 8.8.8.8, 8.8.4.4]
+      optional: yes
 # if the server is not the router, you have to configure the route to the real
 # router with this:
 #    routes:
@@ -152,6 +154,7 @@ network:
         MyWIFI:
           password: "MyPassword"
       dhcp4: true
+      optional: yes
 #     nameservers:
 #       search: [lan]
 #       addresses: [192.168.0.1, 8.8.8.8, 8.8.4.4]
