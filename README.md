@@ -74,6 +74,19 @@ I don't know how it works, so for this guide, I completely ignore it..
 
 Some day.
 
+# Basic OS Config
+
+## Font Size Too Small
+
+In `/etc/default/console-setup`,
+```
+FONTSIZE="16x32"
+```
+Then run
+```
+setupcon
+```
+
 # Configure IP Addresses
 ## A note on ifconfig/ifup/ifdown
 Commands like ifconfig, ifup, ifdown, etc, are deprecated.
