@@ -256,6 +256,62 @@ necessary, but it's probably better.
 These'll help you setup the wireless interface. I prefer `iwd` over
 wpa_supplicant.
 
+### Wifi strength testing
+
+Generally, you want signal to be above -60 dBm or low packet loss.
+
+#### `/proc/net/wireless`
+
+```
+cat `/proc/net/wireless`
+```
+Outputs
+```
+Inter-| sta-|   Quality        |   Discarded packets               | Missed | WE
+ face | tus | link level noise |  nwid  crypt   frag  retry   misc | beacon | 22
+  wlo1: 0000   51.  -59.  -256        0      0      0      1    182        0
+```
+If discarded packets is increasing multiple times a second, you probably have a
+bad wifi connection.
+
+#### `wavemon`
+
+More info and nicer format, but needs install.
+```
+wavemon -i wlo1
+```
+
+#### packet level
+
+Display ip packet statistics
+```
+ip -s link
+```
+
+### Wifi adapter not showing up or stops working after time
+
+#### See network interfaces
+
+```
+ip link
+```
+or
+```
+cd /sys/class/net/
+```
+
+#### See if the device is recognized as a network adapter
+```
+lshw -c network
+```
+
+#### See if the adapter is disabled
+```
+rfkill list
+```
+
+#### See if it's connected as a PCI device
+
 Use the following to debug issues:
 ```
 $ lspci -nnk
@@ -265,10 +321,23 @@ $ lspci -nnk
         Kernel driver in use: iwlwifi
         Kernel modules: iwlwifi
 ```
+
+
+#### See if it's connected as a USB device
+
+```
+lsusb
+```
+
+#### drivers
+
 Search dmesg for issues with the driver or wireless card
 ```
 dmesg | grep -E '(iwlwifi|wlan0)'
 ```
+
+Google the name from lsusb or lspci followed by linux driver. Hopefully, someone
+has something helpful to you.
 
 ## `dhcpcd` service
 
@@ -596,77 +665,6 @@ net.ipv4.ip_forward=1
 ```
 
 I did not need to do this, and I did not test this.
-
-## Wifi strength testing
-
-Generally, you want signal to be above -60 dBm or low packet loss.
-
-### `/proc/net/wireless`
-
-```
-cat `/proc/net/wireless`
-```
-Outputs
-```
-Inter-| sta-|   Quality        |   Discarded packets               | Missed | WE
- face | tus | link level noise |  nwid  crypt   frag  retry   misc | beacon | 22
-  wlo1: 0000   51.  -59.  -256        0      0      0      1    182        0
-```
-If discarded packets is increasing multiple times a second, you probably have a
-bad wifi connection.
-
-### `wavemon`
-
-More info and nicer format, but needs install.
-```
-wavemon -i wlo1
-```
-
-### packet level
-
-Display ip packet statistics
-```
-ip -s link
-```
-
-## Wifi adapter not showing up
-
-### See network interfaces
-
-```
-ip link
-```
-or
-```
-cd /sys/class/net/
-```
-
-### See if the device is recognized as a network adapter
-```
-lshw -c network
-```
-
-### See if the adapter is disabled
-```
-rfkill list
-```
-
-### See if it's connected as a PCI device
-
-```
-lspci -nn
-```
-
-### See if it's connected as a USB device
-
-```
-lsusb
-```
-
-### drivers
-
-Google the name from lsusb or lspci followed by linux driver. Hopefully, someone
-has something helpful to you.
 
 ## `ip` cheat sheet
 
