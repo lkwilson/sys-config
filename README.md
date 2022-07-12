@@ -88,6 +88,21 @@ setupcon
 ```
 
 # Configure IP Addresses
+
+`netplan` lets you configure network and lets you connect to wifi, so that's my
+first pick. However, arch doesn't really support it, and raspbian doesn't have
+it installed by default. My next pick is `systemd-networkd`, but you can't
+configure wifi. To configure wifi, I like `iwd`. However, raspbian already has
+`wpa_supplicant`, so for raspbian, I use that.
+
+So there are 3 major ways to configure your network
+- `netplan` (ubuntu)
+- `systemd-networkd` + `iwd` (arch)
+- `systemd-networkd` + `wpa_supplicant` (raspbian)
+
+I'm sure `NetworkManager` works great for all cases, but it seemed more targeted
+towards GUIs.
+
 ## A note on ifconfig/ifup/ifdown
 Commands like ifconfig, ifup, ifdown, etc, are deprecated.
 
@@ -98,11 +113,6 @@ Others will tell you iproute2 is the replacement, but it's not a network
 manager. Setting ip addresses with `ip addr` don't persist after reboot, and
 adding ip commands to run level scripts seems like an advanced thing that could
 easily be messed up.
-
-Instead, we should use a network manager such as `NetworkManager` or `systemd-networkd`.
-
-`systemd-networkd` is the one I picked for this guide, and to configure it, I
-used `netplan`.
 
 ### Notes
 If you want to use `/etc/network/interfaces`, you're more than welcome to, but
@@ -118,7 +128,6 @@ as well. However, eth0 didn't get any IP address at all at that point. I re
 enabled `dhcpcd`, and it worked just as expected: one single static IP.
 
 ## Setup `netplan`
-
 We configure the `eno1` interface with a static IP. It doesn't need anything
 else like DNS since it gets those from wifi. We configure `wlo1' to connect to
 an access point and use dhcp. You could override DNS nameservers too if you'd
@@ -174,13 +183,8 @@ netplan apply
 The docs suggest that the generate step isn't necessary, but it's warned me
 about configuration issues before, so it seems useful to me.
 
-## Setup `systemd-networkd` (deprecated)
-We use `systemd-networkd` as our network manager
-
-Enable it:
-```
-systemctl enable systemd-networkd
-```
+## Setup `systemd-networkd`
+If you use `netplan`, don't do this.
 
 Configure it by creating two config files:
 ```
@@ -188,14 +192,7 @@ Configure it by creating two config files:
 /etc/systemd/network/11-wlan0.network
 ```
 
-### Note on naming
-I want my internal interface, eth0, to be available and setup before my external
-interface, wlan0, is setup because I point my external interface at my lan's
-dns.
-
-I don't know if it actually matters, but it seems to work just fine this way.
-
-## Lan Interface `/etc/systemd/network/10-eth0.network` (deprecated)
+### Lan Interface `/etc/systemd/network/10-eth0.network`
 We configure the internal interface with a static IP and a subnet mask defining
 its subnet
 
@@ -212,20 +209,30 @@ I will use `192.168.0.1/24` as my router's lan subnet.
 The router will have a static IP of `192.168.0.1`. This can be set to whatever you want,
 just make sure it matches the gateway in DHCP.
 
-### DNS Note
+#### DNS Note
 The following might be useful / necessary, but it seems to work without it, so I
 just leave it out.
 ```
 DNS=192.168.0.1
 ```
 
-### Gateway Note
+#### Gateway Note
 Everything outside of this subnet range will be routed through the default
 route, which is likely the external interface, since it's DHCP server will tell
 it a gateway, which you'll notice we don't configure here. If we did, it would
 likely break some things.
 
-## Wan Interface: `/etc/systemd/network/11-wlan0.network` (deprecated)
+#### Match Note
+How to match multiple interfaces and use DHCP
+```
+[Match]
+Name=en*
+
+[Network]
+DHCP=yes
+```
+
+### Wan Interface: `/etc/systemd/network/11-wlan0.network`
 ```
 [Match]
 Name=wlan0
@@ -239,16 +246,34 @@ IgnoreCarrierLoss=3s
 I think `IgnoreCarrierLoss=3s` is a wifi thing. Move it to any interface files
 with wifi. It doesn't necessarily go in the external interface configuration.
 
-### DNS Note
+#### DNS Note
 We are hosting a DNS server on the internal interface, so we will use it as the
 DNS server. That way, we don't have to trust the external network's DNS
 settings, and we can use a DNS cache that's on the same machine. It might not be
 necessary, but it's probably better.
 
+## `iwd` or `wpa_supplicant`
+These'll help you setup the wireless interface. I prefer `iwd` over
+wpa_supplicant.
+
+Use the following to debug issues:
+```
+$ lspci -nnk
+00:14.3 Network controller [0280]: Intel Corporation Cannon Point-LP CNVi [Wireless-AC] [8086:9df0] (rev 30)
+        DeviceName: Onboard - Ethernet
+        Subsystem: Intel Corporation Device [8086:4234]
+        Kernel driver in use: iwlwifi
+        Kernel modules: iwlwifi
+```
+Search dmesg for issues with the driver or wireless card
+```
+dmesg | grep -E '(iwlwifi|wlan0)'
+```
+
 ## `dhcpcd` service
 
-`systemd-networkd` configures the interface to use dhcp, `dhcpcd` actually does
-the dhcp client work. For that reason, don't disable this service.
+`systemd-networkd` configures the interface to use dhcp, I think `dhcpcd`
+actually does the dhcp client work. For that reason, don't disable this service.
 
 ## Sources:
 
