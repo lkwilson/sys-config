@@ -26,4 +26,5 @@ dd if=/dev/sdc3 of=my_img.iso bs=1M
 dd if=my_img.iso of=/dev/sdb2 bs=1M
 e2fsck -f /dev/sdb2
 resize2fs /dev/sdb2
+tune2fs /dev/sdb1 -U $(uuidgen)
 
