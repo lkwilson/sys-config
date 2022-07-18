@@ -87,6 +87,8 @@ Then run
 setupcon
 ```
 
+## There's also a way to configure caps lock to be ctrl, but not sure how yet
+
 # Configure IP Addresses
 
 `netplan` lets you configure network and lets you connect to wifi, so that's my
