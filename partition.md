@@ -1,14 +1,17 @@
 # info
 
-sectors are 512 bytes
-partitions (except EFI should start on a x*2048s)
+- sectors are 512 bytes
+- partitions (except EFI should start on a x*2048s)
 
+```
 efi is fat32
 mkfs.fat -F 32 /dev/sda1
+```
 
 # How to create iso files
 
 ## create iso
+```
 lsblk -f
 e2fsck -f /dev/sdc3
 resize2fs -M /dev/sdc3
@@ -21,10 +24,12 @@ parted /dev/sdc
   resizepart 3 {new_end_sector}s
 e2fsck -f /dev/sdc3
 dd if=/dev/sdc3 of=my_img.iso bs=1M
+```
 
 ## apply iso
+```
 dd if=my_img.iso of=/dev/sdb2 bs=1M
 e2fsck -f /dev/sdb2
 resize2fs /dev/sdb2
 tune2fs /dev/sdb1 -U $(uuidgen)
-
+```
