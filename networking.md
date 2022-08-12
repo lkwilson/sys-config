@@ -29,15 +29,6 @@ easily be messed up.
 If you want to use `/etc/network/interfaces`, you're more than welcome to, but
 here's issues I ran into.
 
-### eth0 had two IP addresses
-My eth0 got a static IP from ifup, and then I assume `dhcpcd` gave it a
-`169.254.x.x/16` address after dhcp failed.
-
-I removed the `/etc/network/interfaces` config, and I switched to
-`systemd-networkd`.  I assumed `dhcpcd` was also unecessary, so I disabled that
-as well. However, eth0 didn't get any IP address at all at that point. I re
-enabled `dhcpcd`, and it worked just as expected: one single static IP.
-
 # Setup `netplan`
 We configure the `eno1` interface with a static IP. It doesn't need anything
 else like DNS since it gets those from wifi. We configure `wlo1' to connect to
@@ -173,6 +164,20 @@ ActivationPolicy=down
 ```
 Prevent wireless network cards from even coming up
 
+## Other Services
+
+### `systemd-resolved`
+For DNS, you need to also enable `systemd-resolved`, and link its file into `resolve.conf`:
+```
+ln -rsf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+```
+
+Use `resolvectl status` to see what dns is currently configured.
+
+### `dhcpcd`
+`dhcpcd` will also be trying to do helpful things, but it will conflict with
+systemd-networkd, so disable it.
+
 # `iwd` or `wpa_supplicant`
 These'll help you setup the wireless interface. I prefer `iwd` over
 wpa_supplicant.
@@ -259,11 +264,6 @@ dmesg | grep -E '(iwlwifi|wlan0)'
 
 Google the name from lsusb or lspci followed by linux driver. Hopefully, someone
 has something helpful to you.
-
-# `dhcpcd` service
-
-`systemd-networkd` configures the interface to use dhcp, I think `dhcpcd`
-actually does the dhcp client work. For that reason, don't disable this service.
 
 # Sources:
 
