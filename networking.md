@@ -163,6 +163,16 @@ DNS server. That way, we don't have to trust the external network's DNS
 settings, and we can use a DNS cache that's on the same machine. It might not be
 necessary, but it's probably better.
 
+## None Interface: `/etc/systemd/network/11-wl.network`
+```
+[Match]
+Name=wl*
+
+[Link]
+ActivationPolicy=down
+```
+Prevent wireless network cards from even coming up
+
 # `iwd` or `wpa_supplicant`
 These'll help you setup the wireless interface. I prefer `iwd` over
 wpa_supplicant.
