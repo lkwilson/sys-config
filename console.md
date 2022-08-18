@@ -11,7 +11,14 @@ Then run
 setupcon
 ```
 
-# If you have whatever arch installs
+# Capslock
+
+## `console-setup`
+`/etc/default/keyboard`
+```
+XKBOPTIONS="ctrl:nocaps"
+```
+## If you have whatever arch installs
 
 It's wiki will tell you how to configure it, but if your control stays on after
 you release capslock, you have to add 16 space separated new mapping values.
