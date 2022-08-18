@@ -25,9 +25,12 @@ manager. Setting ip addresses with `ip addr` don't persist after reboot, and
 adding ip commands to run level scripts seems like an advanced thing that could
 easily be messed up.
 
+Once I get the other networking tool setup, I just remove this one: `ifupdown`.
+
 ## Notes
 If you want to use `/etc/network/interfaces`, you're more than welcome to, but
 here's issues I ran into.
+
 
 # Setup `netplan`
 We configure the `eno1` interface with a static IP. It doesn't need anything
