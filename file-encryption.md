@@ -6,6 +6,10 @@ encryption and signing.
 ```
 gpg --gen-key
 ```
+or
+```
+gpg --full-generate-key
+```
 
 # Encrypt a file
 ```
@@ -19,8 +23,20 @@ rm file.txt
 gpg --output file.txt --decrypt file.txt.enc
 ```
 
+# Export Key
+```
+gpg --list-secret-keys key-email@example.com
+gpg --export-secret-keys key-email@example.com
+```
+
+# Import Key
+```
+gpg --import-key my-key.key
+gpg --edit-key key-email@example.com
+gpg> trust
+```
+
 # TODO
-- There's ways to export and import your keys to transfer them or back them up.
 - You can convert gpg keys to pgp text files
 - See the apt guide, there's some information there since it deals with this
 
