@@ -18,11 +18,23 @@ setupcon
 ```
 XKBOPTIONS="ctrl:nocaps"
 ```
-## If you have whatever arch installs
+# Arch
 
-It's wiki will tell you how to configure it, but if your control stays on after
-you release capslock, you have to add 16 space separated new mapping values.
+Arch uses something [else](https://wiki.archlinux.org/title/Linux_console/Keyboard_configuration): 
 
-I forget what it was exactly, but I have it noted somewhere.
+Create `/etc/caps2ctrl.kmap`
+```
+keycode 58 = Control Control Control Control Control Control Control Control Control Control Control Control Control Control Control Control 
+```
+That's 16 Control's
 
-TODO
+Then test it with
+```
+loadkeys /etc/caps2ctrl.kmap
+```
+
+Then make it permanent in `/etc/vconsole.conf`
+```
+KEYMAP=/etc/caps2ctrl.kmap
+```
+
