@@ -1,0 +1,13 @@
+How did i get here?
+
+```
+yarn create vite
+yarn add --dev @electron-forge/cli
+yarn electron-forge import
+```
+
+- vite's web page stuff is at root, so move it to src
+- electron's entry is in app
+- configure vite to output build files into app/
+- then conda forge can package it all together
+
