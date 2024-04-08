@@ -1,0 +1,12 @@
+[Unit]
+Description=Turn off power and activity led
+After=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=sh -c "echo 0 > /sys/class/leds/PWR/brightness && echo 0 > /sys/class/leds/ACT/brightness"
+ExecStop=sh -c "echo 1 > /sys/class/leds/PWR/brightness && echo 1 > /sys/class/leds/ACT/brightness"
+
+[Install]
+WantedBy=multi-user.target
